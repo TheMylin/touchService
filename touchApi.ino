@@ -110,7 +110,7 @@ The keyboard report is 8 bytes
 6 Keycode 5
 7 Keycode 6
 */
-uint8_t keypressA[8]={ 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00 };
+uint8_t keypressA[8]={ 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 /*** FUNC
 
@@ -729,19 +729,25 @@ void setup(void)
   //The second parameter is for turning debug printing on for the ACI Commands and Events so they be printed on the Serial
   lib_aci_init(&aci_state, false);
 
-  pinMode(6, INPUT); //Pin #6 on Arduino -> PAIRING CLEAR pin: Connect to 3.3v to clear the pairing
-  if (0x01 == digitalRead(6))
-  {
-    //Clear the pairing
-    Serial.println(F("Pairing cleared. Remove the wire on Pin 6 and reset the board for normal operation."));
-    //Address. Value
-    EEPROM.write(0, 0xFF);
-    while(1) {};
-  }
+  //Clear the pairing every time we start up
+  Serial.println(F("Pairing cleared."));
+  //Address. Value
+  EEPROM.write(0, 0xFF);
 
   //Initialize the state of the bond
   aci_state.bonded = ACI_BOND_STATUS_FAILED;
 }
+
+enum KeyCode {
+  XF86AudioPlay = 232,
+  XF86AudioStop = 233,
+  XF86AudioPrev = 234,
+  XF86AudioNext = 235,
+  XF86AudioRaiseVolume = 237, //volume up and down should take photo on iOS 
+  XF86AudioLowerVolume = 238,
+  XF86Back = 241,
+  XF86Forward = 242
+};
 
 
 /* This is like a main() { while(1) { loop() } }
@@ -759,12 +765,14 @@ void loop(void)
       && (1 == timer1_f) )
   {
     timer1_f = 0;
-    keypressA[2] = 0x04;
+    keypressA[2] = 0x80;
     lib_aci_send_data(PIPE_HID_SERVICE_HID_REPORT_TX, &keypressA[0], 8);
     aci_state.data_credit_available--;
+    Serial.println(F("sending press command"));
     keypressA[2] = 0x00;
     lib_aci_send_data(PIPE_HID_SERVICE_HID_REPORT_TX, &keypressA[0], 8);
     aci_state.data_credit_available--;
+    Serial.println(F("sending press command"));
   }
 
 }
